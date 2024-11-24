@@ -3,6 +3,9 @@ use std::env;
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Write};
 
+use regex::Regex;
+use walkdir::WalkDir;
+
 fn read_lines<'a>(file: &'a File) -> io::Result<Vec<String>> {
     let reader = BufReader::new(file);
     let mut lines = Vec::new();
@@ -52,11 +55,26 @@ fn convert(filename: &str) {
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    for (_, arg) in args.iter().enumerate() {
-        if !arg.contains(".txt") {
+    let mut re;
+    let mut filename;
+
+    for (i, arg) in args.iter().enumerate() {
+        if i == 0 {
             continue;
         }
-        println!("Converting: {}", arg);
-        convert(arg);
+
+        re = Regex::new(arg).unwrap();
+
+        for entry in WalkDir::new(".").into_iter().filter_map(Result::ok) {
+            if !entry.file_type().is_file() {
+                continue;
+            }
+
+            filename = entry.file_name().to_string_lossy();
+            if re.is_match(&filename) {
+                println!("Converting: {}", filename);
+                convert(&filename);
+            }
+        }
     }
 }
