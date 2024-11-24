@@ -1,4 +1,5 @@
 use core::panic;
+use std::env;
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Write};
 
@@ -21,8 +22,8 @@ fn write_lines(file: &mut File, lines: Vec<String>) -> io::Result<()> {
     Ok(())
 }
 
-fn main() {
-    let file = match OpenOptions::new().read(true).open("./test.txt") {
+fn convert(filename: &str) {
+    let file = match OpenOptions::new().read(true).open(filename) {
         Ok(file) => file,
         Err(error) => {
             panic!("Error opening file: {:?}", error);
@@ -36,14 +37,7 @@ fn main() {
         }
     };
 
-    drop(file);
-
-    let mut file = match OpenOptions::new()
-        .read(true)
-        .write(true)
-        .truncate(true)
-        .open("./test.txt")
-    {
+    let mut file = match OpenOptions::new().write(true).truncate(true).open(filename) {
         Ok(file) => file,
         Err(error) => {
             panic!("Error opening file: {:?}", error);
@@ -52,5 +46,17 @@ fn main() {
 
     if let Err(e) = write_lines(&mut file, lines) {
         panic!("Error writing to file: {:?}", e);
+    }
+}
+
+fn main() {
+    let args: Vec<String> = env::args().collect();
+
+    for (_, arg) in args.iter().enumerate() {
+        if !arg.contains(".txt") {
+            continue;
+        }
+        println!("Converting: {}", arg);
+        convert(arg);
     }
 }
